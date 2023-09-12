@@ -2,14 +2,14 @@ package org.acme;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
+import org.kie.kogito.Model;
 import org.kie.kogito.process.Process;
 import org.kie.kogito.process.ProcessInstance;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.util.Collection;
 import java.util.Map;
-
-import org.acme.Failing_subModel;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
@@ -20,21 +20,22 @@ public class SubprocessTests
 {
 	@Inject
 	@Named("failing_sub")
-	Process<org.acme.Failing_subModel> process;
+	Process<? extends Model> process;
 
 	@Test
 	public void shouldReturnList()
 	{
 		// given
-		Failing_subModel model = process.createModel();
+		Model model = process.createModel();
 		model.fromMap(Map.of("myname", "john doe"));
 
 		// when
-		ProcessInstance<Failing_subModel> instance = process.createInstance(model);
+		ProcessInstance<? extends Model> instance = process.createInstance(model);
 		instance.start();
 
 		// then
 		assertEquals(ProcessInstance.STATE_COMPLETED, instance.status());
-		assertThat(instance.variables().getGreeting(), hasItem("Hello john doe"));
+		Collection<String> greeting = (Collection<String>)instance.variables().toMap().get("greeting");
+		assertThat(greeting, hasItem("Hello john doe"));
 	}
 }
